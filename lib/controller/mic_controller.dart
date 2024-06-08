@@ -1,15 +1,50 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_rx/get_rx.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-import '../common/audioFn.dart';
+class MicController extends GetxController {
+  var tapped = false.obs;
+  RxString recognizedText = "Enter text here".obs;
+  late TextEditingController textController;
+  late stt.SpeechToText _speech;
 
-class MicController extends GetxController{
+  @override
+  void onInit() {
+    super.onInit();
+    _speech = stt.SpeechToText();
+    textController = TextEditingController();
+  }
 
-RxBool tapped = false.obs;
+  Future<void> handleTap(String sourceLanguage) async {
+    if (!_speech.isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (status) {
+          print("Speech status: $status");
+        },
+        onError: (error) {
+          print("Speech error: $error");
+        },
+      );
 
-RxBool isPlaying = false.obs; 
-handleTap(){
-  tapped.value = !tapped.value;
- tapped.value ? playStopSound() : playSound(); 
-}
+      if (available) {
+        _speech.listen(
+          onResult: (result) {
+            if (result.finalResult) {
+              print("Speech result: ${result.recognizedWords}");
+              recognizedText.value = result.recognizedWords;
+              textController.text = recognizedText.value;
+              Get.focusScope!.requestFocus(FocusNode());
+            }
+          },
+          localeId: sourceLanguage,  // Add this line to specify the source language
+        );
+        tapped.value = true;
+      } else {
+        print("Speech initialization failed");
+      }
+    } else {
+      _speech.stop();
+      tapped.value = false;
+    }
+  }
 }
