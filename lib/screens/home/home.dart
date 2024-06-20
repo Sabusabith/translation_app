@@ -1,4 +1,5 @@
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,19 +11,22 @@ import 'package:translate_do/controller/mic_controller.dart';
 import 'package:translator/translator.dart';
 
 import '../../common/languages.dart';
+import '../../controller/camera_controller.dart';
+import '../camera/camera.dart';
+// Import the CameraScreenController
 
 class Home extends StatelessWidget {
   Home({Key? key});
 
   final MicController micController = Get.put(MicController());
   final HomeController homeController = Get.put(HomeController());
+  final CameraScreenController cameraController = Get.put(CameraScreenController());
   final TextEditingController textController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     String getLanguageName(String code) {
       for (var language in languages) {
-        print("languages $language");
         if (language['code'] == code) {
           return language['name']!;
         }
@@ -75,10 +79,15 @@ class Home extends StatelessWidget {
             ),
           ),
           SizedBox(width: 15),
-          Icon(
-            CupertinoIcons.camera_viewfinder,
-            color: Colors.white,
-            size: 30,
+          GestureDetector(
+            onTap: () async {
+              await _scanTextFromCamera(context);
+            },
+            child: Icon(
+              CupertinoIcons.camera_viewfinder,
+              color: Colors.white,
+              size: 30,
+            ),
           ),
           SizedBox(width: 15),
         ],
@@ -97,10 +106,8 @@ class Home extends StatelessWidget {
                   margin: EdgeInsets.symmetric(horizontal: 25),
                   child: TextField(
                     cursorColor: Colors.blue.withOpacity(.8),
-                   
                     controller: micController.textController,
                     onChanged: (text) {
-
                       micController.recognizedText.value = text;
                     },
                     onTap: () {
@@ -146,7 +153,7 @@ class Home extends StatelessWidget {
                       },
                       child: Icon(
                         Icons.arrow_circle_right_rounded,
-                        color:Colors.blue.withOpacity(.9),
+                        color: Colors.blue.withOpacity(.9),
                         size: 55,
                       ),
                     )
@@ -168,7 +175,8 @@ class Home extends StatelessWidget {
                   children: [
                     InkWell(
                       onTap: () async {
-                        await micController.handleTap(homeController.selectedLanguageCode);
+                        await micController
+                            .handleTap(homeController.selectedLanguageCode);
                         FocusScope.of(context).unfocus();
                       },
                       child: Obx(
@@ -229,7 +237,6 @@ class Home extends StatelessWidget {
                               value: homeController.selectedLanguageCode,
                               onChanged: (String? newValue) {
                                 if (newValue != null) {
-                                  print("New value :$newValue");
                                   homeController.setSelectedLanguage(newValue);
                                 }
                               },
@@ -240,8 +247,8 @@ class Home extends StatelessWidget {
                                     child: Text(
                                       language['name']!,
                                       style: TextStyle(
-                                        
-                                          color: Colors.grey.shade200),
+                                        color: Colors.grey.shade200,
+                                      ),
                                     ),
                                   );
                                 },
@@ -265,7 +272,6 @@ class Home extends StatelessWidget {
                               value: homeController.targetLanguageCode,
                               onChanged: (String? newValue) {
                                 if (newValue != null) {
-                                  print("New value :$newValue");
                                   homeController.setTargetLanguage(newValue);
                                 }
                               },
@@ -273,9 +279,12 @@ class Home extends StatelessWidget {
                                 (Map<String, String> language) {
                                   return DropdownMenuItem<String>(
                                     value: language['code'],
-                                    child: Text(language['name']!,
-                                        style: TextStyle(
-                                            color: Colors.grey.shade200)),
+                                    child: Text(
+                                      language['name']!,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    ),
                                   );
                                 },
                               ).toList(),
@@ -284,15 +293,12 @@ class Home extends StatelessWidget {
                         ),
                         SizedBox(
                           width: 20,
-                        )
+                        ),
                       ],
-                    ),
-                    SizedBox(
-                      height: 25,
                     ),
                   ],
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -300,25 +306,38 @@ class Home extends StatelessWidget {
     );
   }
 
+  Future<void> _scanTextFromCamera(BuildContext context) async {
+    final result = await Get.to(() => CameraScreen());
+
+    if (result != null) {
+      micController.textController.text = result;
+      micController.recognizedText.value = result;
+    }
+  }
+
   void showLoadingDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          content: Center(
-            child: SizedBox(
-              width: 60,
+        return Center(
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(.8),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: LoadingIndicator(
-                indicatorType: Indicator.ballPulse, // Required
-                colors: [Colors.green], // Optional
+                indicatorType: Indicator.ballSpinFadeLoader,
+                colors: [Colors.blue.withOpacity(.8)],
               ),
             ),
           ),
         );
       },
+      barrierDismissible: false,
     );
   }
 
@@ -354,7 +373,7 @@ class Home extends StatelessWidget {
                   Text(
                     targetlang,
                     style: GoogleFonts.dmMono(
-                      color: Colors.grey.shade300,
+                      color: Colors.blue.withOpacity(.8),
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
                     ),
@@ -397,8 +416,8 @@ class Home extends StatelessWidget {
                       child: Text(
                         translatedText,
                         style: GoogleFonts.dmMono(
-                          color: Color(0xffa8c7fa),
-                          fontSize: 22,
+                          color: Colors.grey.shade200,
+                          fontSize: 16,
                         ),
                         maxLines: null,
                       ),

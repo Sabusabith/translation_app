@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:translate_do/common/color.dart';
 import 'package:translate_do/controller/splash_controller.dart';
 
@@ -21,9 +22,19 @@ class Splash extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+          //       Text(
+          // "TransWay",
+          // style: GoogleFonts.dmMono(
+          //   color: Colors.blue.withOpacity(.8),
+          //   fontSize: 45,
+          //   fontWeight: FontWeight.bold,
+          // ),
+          //       ),
+          //       SizedBox(height: 15,),
                 Image.asset(
                   "assets/images/logo.png",
-                  height: 150,
+                  height: 80,
+                  color: Colors.blue,
                 )
               ],
             ),
