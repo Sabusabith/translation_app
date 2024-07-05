@@ -9,7 +9,7 @@
     </queries>
 
     <application
-        android:label="translate_do"
+        android:label="TransWay"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher">

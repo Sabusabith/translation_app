@@ -2,6 +2,7 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:loading_indicator/loading_indicator.dart';
@@ -22,6 +23,7 @@ class Home extends StatelessWidget {
   final HomeController homeController = Get.put(HomeController());
   final CameraScreenController cameraController = Get.put(CameraScreenController());
   final TextEditingController textController = TextEditingController();
+  DateTime? lastPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -53,253 +55,255 @@ class Home extends StatelessWidget {
     }
 
     Size size = MediaQuery.of(context).size;
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: kbgcolor2,
-      appBar: AppBar(
-        leading: SizedBox(),
+    return WillPopScope(onWillPop: ()=>onWillPop(),
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: kbgcolor2,
-        centerTitle: true,
-        title: Text(
-          "TransWay",
-          style: GoogleFonts.dmMono(
-            color: Colors.grey.shade400,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          leading: SizedBox(),
+          backgroundColor: kbgcolor2,
+          centerTitle: true,
+          title: Text(
+            "TransWay",
+            style: GoogleFonts.dmMono(
+              color: Colors.grey.shade400,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          actions: [
+            GestureDetector(
+              onTap: () {
+                micController.textController.clear();
+              },
+              child: Icon(
+                Icons.clear,
+                color: Colors.white,
+                size: 25,
+              ),
+            ),
+            SizedBox(width: 15),
+            GestureDetector(
+              onTap: () async {
+                await _scanTextFromCamera(context);
+              },
+              child: Icon(
+                CupertinoIcons.camera_viewfinder,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+            SizedBox(width: 15),
+          ],
         ),
-        actions: [
-          GestureDetector(
-            onTap: () {
-              micController.textController.clear();
-            },
-            child: Icon(
-              Icons.clear,
-              color: Colors.white,
-              size: 25,
-            ),
-          ),
-          SizedBox(width: 15),
-          GestureDetector(
-            onTap: () async {
-              await _scanTextFromCamera(context);
-            },
-            child: Icon(
-              CupertinoIcons.camera_viewfinder,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-          SizedBox(width: 15),
-        ],
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          width: size.width,
-          height: size.height,
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  width: size.width,
-                  height: size.height,
-                  margin: EdgeInsets.symmetric(horizontal: 25),
-                  child: TextField(
-                    cursorColor: Colors.blue.withOpacity(.8),
-                    controller: micController.textController,
-                    onChanged: (text) {
-                      micController.recognizedText.value = text;
-                    },
-                    onTap: () {
-                      homeController.setFieldTap(true);
-                    },
-                    style: GoogleFonts.dmSans(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                      height: 2,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade600,
+        body: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            width: size.width,
+            height: size.height,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    width: size.width,
+                    height: size.height,
+                    margin: EdgeInsets.symmetric(horizontal: 25),
+                    child: TextField(
+                      cursorColor: Colors.blue.withOpacity(.8),
+                      controller: micController.textController,
+                      onChanged: (text) {
+                        micController.recognizedText.value = text;
+                      },
+                      onTap: () {
+                        homeController.setFieldTap(true);
+                      },
+                      style: GoogleFonts.dmSans(
+                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
+                        height: 2,
                       ),
-                      hintText: "Enter text here",
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                        hintText: "Enter text here",
+                      ),
+                      maxLines: 1000,
                     ),
-                    maxLines: 1000,
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 15, bottom: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        FocusScope.of(context).unfocus();
-                        final textToTranslate =
-                            micController.textController.text;
-                        final sourceLanguage =
-                            homeController.selectedLanguageCode;
-                        final targetLanguage =
-                            homeController.targetLanguage.value;
-                        translateText(
-                            textToTranslate, sourceLanguage, targetLanguage);
-                      },
-                      child: Icon(
-                        Icons.arrow_circle_right_rounded,
-                        color: Colors.blue.withOpacity(.9),
-                        size: 55,
-                      ),
-                    )
-                  ],
-                ),
-              ),
-              Container(
-                width: size.width,
-                height: 280,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
+                Padding(
+                  padding: const EdgeInsets.only(right: 15, bottom: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          FocusScope.of(context).unfocus();
+                          final textToTranslate =
+                              micController.textController.text;
+                          final sourceLanguage =
+                              homeController.selectedLanguageCode;
+                          final targetLanguage =
+                              homeController.targetLanguage.value;
+                          translateText(
+                              textToTranslate, sourceLanguage, targetLanguage);
+                        },
+                        child: Icon(
+                          Icons.arrow_circle_right_rounded,
+                          color: Colors.blue.withOpacity(.9),
+                          size: 55,
+                        ),
+                      )
+                    ],
                   ),
-                  color: kbgcolor,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    InkWell(
-                      onTap: () async {
-                        await micController
-                            .handleTap(homeController.selectedLanguageCode);
-                        FocusScope.of(context).unfocus();
-                      },
-                      child: Obx(
-                        () => micController.tapped.value
-                            ? AvatarGlow(
-                                glowColor: Colors.blue.withOpacity(.8),
-                                glowShape: BoxShape.circle,
-                                animate: true,
-                                curve: Curves.bounceInOut,
-                                duration: Duration(milliseconds: 2000),
-                                repeat: true,
-                                child: Material(
-                                  elevation: 8.0,
-                                  shape: CircleBorder(),
-                                  child: Container(
-                                    width: 70,
-                                    height: 70,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15),
-                                      color: kbuttoncolor,
-                                    ),
-                                    child: Icon(
-                                      CupertinoIcons.app_fill,
-                                      color: Colors.grey.shade200,
+                Container(
+                  width: size.width,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(25),
+                      topRight: Radius.circular(25),
+                    ),
+                    color: kbgcolor,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkWell(
+                        onTap: () async {
+                          await micController
+                              .handleTap(homeController.selectedLanguageCode);
+                          FocusScope.of(context).unfocus();
+                        },
+                        child: Obx(
+                          () => micController.tapped.value
+                              ? AvatarGlow(
+                                  glowColor: Colors.blue.withOpacity(.8),
+                                  glowShape: BoxShape.circle,
+                                  animate: true,
+                                  curve: Curves.bounceInOut,
+                                  duration: Duration(milliseconds: 2000),
+                                  repeat: true,
+                                  child: Material(
+                                    elevation: 8.0,
+                                    shape: CircleBorder(),
+                                    child: Container(
+                                      width: 70,
+                                      height: 70,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(15),
+                                        color: kbuttoncolor,
+                                      ),
+                                      child: Icon(
+                                        CupertinoIcons.app_fill,
+                                        color: Colors.grey.shade200,
+                                      ),
                                     ),
                                   ),
+                                )
+                              : Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: Colors.blue.withOpacity(.8),
+                                  ),
+                                  child: Icon(
+                                    CupertinoIcons.mic_fill,
+                                    color: Colors.grey.shade200,
+                                    size: 35,
+                                  ),
                                 ),
-                              )
-                            : Container(
-                                width: 70,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  color: Colors.blue.withOpacity(.8),
-                                ),
-                                child: Icon(
-                                  CupertinoIcons.mic_fill,
-                                  color: Colors.grey.shade200,
-                                  size: 35,
-                                ),
-                              ),
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      height: 35,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                        ),
-                        Obx(
-                          () => Expanded(
-                            child: DropdownButton<String>(
-                              dropdownColor: Colors.black.withOpacity(.8),
-                              isExpanded: true,
-                              value: homeController.selectedLanguageCode,
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  homeController.setSelectedLanguage(newValue);
-                                }
-                              },
-                              items: languages.map<DropdownMenuItem<String>>(
-                                (Map<String, String> language) {
-                                  return DropdownMenuItem<String>(
-                                    value: language['code'],
-                                    child: Text(
-                                      language['name']!,
-                                      style: TextStyle(
-                                        color: Colors.grey.shade200,
-                                      ),
-                                    ),
-                                  );
+                      SizedBox(
+                        height: 35,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Obx(
+                            () => Expanded(
+                              child: DropdownButton<String>(
+                                dropdownColor: Colors.black.withOpacity(.8),
+                                isExpanded: true,
+                                value: homeController.selectedLanguageCode,
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    homeController.setSelectedLanguage(newValue);
+                                  }
                                 },
-                              ).toList(),
+                                items: languages.map<DropdownMenuItem<String>>(
+                                  (Map<String, String> language) {
+                                    return DropdownMenuItem<String>(
+                                      value: language['code'],
+                                      child: Text(
+                                        language['name']!,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ).toList(),
+                              ),
                             ),
                           ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            // Add functionality for the second dropdown here
-                          },
-                          child: Image.asset(
-                            "assets/images/switch.png",
-                          ),
-                        ),
-                        Obx(
-                          () => Expanded(
-                            child: DropdownButton<String>(
-                              dropdownColor: Colors.black.withOpacity(.8),
-                              isExpanded: true,
-                              value: homeController.targetLanguageCode,
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  homeController.setTargetLanguage(newValue);
-                                }
-                              },
-                              items: languages.map<DropdownMenuItem<String>>(
-                                (Map<String, String> language) {
-                                  return DropdownMenuItem<String>(
-                                    value: language['code'],
-                                    child: Text(
-                                      language['name']!,
-                                      style: TextStyle(
-                                        color: Colors.grey.shade200,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ).toList(),
+                          InkWell(
+                            onTap: () {
+                              // Add functionality for the second dropdown here
+                            },
+                            child: Image.asset(
+                              "assets/images/switch.png",
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          width: 20,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              )
-            ],
+                          Obx(
+                            () => Expanded(
+                              child: DropdownButton<String>(
+                                dropdownColor: Colors.black.withOpacity(.8),
+                                isExpanded: true,
+                                value: homeController.targetLanguageCode,
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    homeController.setTargetLanguage(newValue);
+                                  }
+                                },
+                                items: languages.map<DropdownMenuItem<String>>(
+                                  (Map<String, String> language) {
+                                    return DropdownMenuItem<String>(
+                                      value: language['code'],
+                                      child: Text(
+                                        language['name']!,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ).toList(),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -430,5 +434,24 @@ class Home extends StatelessWidget {
         );
       },
     );
+  }
+   Future<bool> onWillPop() async {
+    DateTime now = DateTime.now();
+    if (lastPressed == null || now.difference(lastPressed!) > Duration(seconds: 2)) {
+      lastPressed = now;
+      Get.snackbar(
+        'Press Back Again to Exit',
+        
+        '',
+        colorText: Colors.grey.shade200,
+
+        snackPosition: SnackPosition.BOTTOM,
+        duration: Duration(seconds: 2),
+      );
+      return Future.value(false);
+    }
+        SystemNavigator.pop();
+
+    return Future.value(true);
   }
 }
