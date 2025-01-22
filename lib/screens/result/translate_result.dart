@@ -7,6 +7,7 @@ import 'package:translate_do/common/color.dart';
 class Result extends StatelessWidget {
   Result({super.key, required this.result});
   String result;
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;

@@ -1,5 +1,4 @@
 import 'package:avatar_glow/avatar_glow.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,9 +8,11 @@ import 'package:loading_indicator/loading_indicator.dart';
 import 'package:translate_do/common/color.dart';
 import 'package:translate_do/controller/home_controller.dart';
 import 'package:translate_do/controller/mic_controller.dart';
+import 'package:translate_do/screens/ads/banner_ad.dart';
 import 'package:translator/translator.dart';
 
 import '../../common/languages.dart';
+import '../../controller/addcontroller.dart';
 import '../../controller/camera_controller.dart';
 import '../camera/camera.dart';
 // Import the CameraScreenController
@@ -23,12 +24,16 @@ class Home extends StatelessWidget {
   final HomeController homeController = Get.put(HomeController());
   final CameraScreenController cameraController = Get.put(CameraScreenController());
   final TextEditingController textController = TextEditingController();
-  DateTime? lastPressed;
+    final BannerAdController adController = Get.put(BannerAdController());
 
+  DateTime? lastPressed;
+final adBanner =  BannerAdScreen();
   @override
   Widget build(BuildContext context) {
+
     String getLanguageName(String code) {
       for (var language in languages) {
+        
         if (language['code'] == code) {
           return language['name']!;
         }
@@ -64,7 +69,7 @@ class Home extends StatelessWidget {
           backgroundColor: kbgcolor2,
           centerTitle: true,
           title: Text(
-            "TransWay",
+            "TransWave",
             style: GoogleFonts.dmMono(
               color: Colors.grey.shade400,
               fontWeight: FontWeight.bold,
@@ -144,6 +149,7 @@ class Home extends StatelessWidget {
                     children: [
                       GestureDetector(
                         onTap: () {
+                          
                           FocusScope.of(context).unfocus();
                           final textToTranslate =
                               micController.textController.text;
@@ -279,6 +285,7 @@ class Home extends StatelessWidget {
                                   }
                                 },
                                 items: languages.map<DropdownMenuItem<String>>(
+
                                   (Map<String, String> language) {
                                     return DropdownMenuItem<String>(
                                       value: language['code'],
@@ -365,72 +372,78 @@ class Home extends StatelessWidget {
               topRight: Radius.circular(25),
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(width: 15),
-                  Spacer(),
-                  Text(
-                    targetlang,
-                    style: GoogleFonts.dmMono(
-                      color: Colors.blue.withOpacity(.8),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                ],
-              ),
-              SizedBox(height: 15),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                  ),
-                  Expanded(
-                      child: Divider(
-                    color: Colors.grey.shade700,
-                    thickness: .5,
-                  )),
-                  SizedBox(
-                    width: 20,
-                  )
-                ],
-              ),
-              SizedBox(height: 15),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
-                  child: SingleChildScrollView(
-                    child: Center(
-                      child: Text(
-                        translatedText,
+          child: Stack(
+            children:[ Positioned.fill(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      SizedBox(width: 15),
+                      Spacer(),
+                      Text(
+                        targetlang,
                         style: GoogleFonts.dmMono(
-                          color: Colors.grey.shade200,
-                          fontSize: 16,
+                          color: Colors.blue.withOpacity(.8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
                         ),
-                        maxLines: null,
+                      ),
+                      Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                    ],
+                  ),
+                  SizedBox(height: 15),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Expanded(
+                          child: Divider(
+                        color: Colors.grey.shade700,
+                        thickness: .5,
+                      )),
+                      SizedBox(
+                        width: 20,
+                      )
+                    ],
+                  ),
+                  SizedBox(height: 15),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
+                      child: SingleChildScrollView(
+                        child: Center(
+                          child: Text(
+                            translatedText,
+                            style: GoogleFonts.dmMono(
+                              color: Colors.grey.shade200,
+                              fontSize: 16,
+                            ),
+                            maxLines: null,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+        
+           adController.isBannerAdReady.value? Positioned(right: 0,left: 0,bottom: 5,child: Center(child: BannerAdScreen())):SizedBox()
+         ] ),
         );
       },
     );
@@ -455,3 +468,6 @@ class Home extends StatelessWidget {
     return Future.value(true);
   }
 }
+
+
+

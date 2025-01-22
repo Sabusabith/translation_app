@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 import 'package:translate_do/screens/home/home.dart';
 
 class SplashController extends GetxController{
+   
+
+
 
 @override
   void onInit() {
